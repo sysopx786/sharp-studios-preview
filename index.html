@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sharp Studios — Find your cut</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@500;700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
+  <style>
+    :root { --ink:#0b0b0b; --ink2:#161616; --paper:#f4efe8; --cream:#d9cbb6; --gold:#c6a15b; --muted:#8a8178; --line:#2c2824; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { background:var(--ink); color:var(--paper); font-family:"Source Sans 3",system-ui,sans-serif; min-height:100vh; }
+    a { color:var(--gold); }
+    header { padding:18px 6vw 0; display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap; }
+    .brand { font-family:"Big Shoulders Display",sans-serif; letter-spacing:.16em; font-size:20px; text-transform:uppercase; }
+    .brand small { color:var(--muted); letter-spacing:.08em; font-size:13px; }
+    nav { display:flex; gap:8px; }
+    nav button, .btn { font-family:inherit; font-size:13px; letter-spacing:.08em; text-transform:uppercase; border:1px solid var(--line); background:transparent; color:var(--cream); padding:8px 12px; cursor:pointer; text-decoration:none; display:inline-block; }
+    nav button.on, .btn.gold { border-color:var(--gold); color:#111; background:var(--gold); }
+    main { max-width:720px; margin:0 auto; padding:24px 22px 80px; }
+    h1 { font-family:"Big Shoulders Display",sans-serif; font-size:clamp(40px,9vw,64px); line-height:.95; font-weight:500; margin:18px 0 8px; }
+    .lede { color:var(--muted); font-style:italic; margin-bottom:22px; }
+    .panel { display:none; }
+    .panel.on { display:block; }
+    .progress { height:3px; background:var(--line); margin:0 0 22px; }
+    .progress i { display:block; height:100%; width:0; background:var(--gold); transition:width .2s; }
+    .q { font-size:26px; margin-bottom:14px; }
+    .choices { display:grid; gap:10px; }
+    .choices button { text-align:left; background:var(--ink2); border:1px solid var(--line); color:var(--paper); padding:14px 16px; font:inherit; font-size:18px; cursor:pointer; }
+    .choices button:hover { border-color:var(--gold); }
+    .choices button small { display:block; color:var(--muted); font-size:14px; font-style:italic; margin-top:3px; }
+    .result h2 { font-family:"Big Shoulders Display",sans-serif; font-size:40px; font-weight:500; }
+    .result p { margin:10px 0 18px; color:var(--cream); line-height:1.45; }
+    .row { display:flex; gap:10px; flex-wrap:wrap; }
+    .chat { background:var(--ink2); border:1px solid var(--line); padding:16px; }
+    .log { min-height:200px; max-height:380px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; }
+    .bubble { max-width:92%; padding:11px 13px; line-height:1.4; }
+    .bot { background:#1c1a17; border:1px solid var(--line); }
+    .you { align-self:flex-end; border:1px solid var(--gold); }
+    .ask { display:flex; gap:8px; margin-top:12px; }
+    .ask input { flex:1; background:var(--ink); border:1px solid var(--line); color:var(--paper); padding:11px 12px; font:inherit; }
+    .ask button { background:var(--gold); border:0; color:#111; padding:0 14px; font:inherit; text-transform:uppercase; letter-spacing:.06em; cursor:pointer; }
+    .chips { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+    .chips button { background:transparent; border:1px solid var(--line); color:var(--muted); padding:7px 10px; font:inherit; font-size:13px; cursor:pointer; }
+    details { border-top:1px solid var(--line); padding:12px 0; }
+    summary { cursor:pointer; color:var(--cream); }
+    details p { margin-top:8px; color:var(--muted); }
+    .note { color:var(--muted); font-size:13px; margin-top:8px; }
+    .stripe { height:8px; background-image:repeating-linear-gradient(90deg,#c6a15b 0 22px,#f4efe8 22px 30px,#0b0b0b 30px 38px,#f4efe8 38px 46px); }
+  </style>
+</head>
+<body>
+  <div class="stripe"></div>
+  <header>
+    <div class="brand">Sharp Studios <small>157 N 5th · Reading, PA</small></div>
+    <nav>
+      <button type="button" id="tab-quiz" class="on">Find your cut</button>
+      <button type="button" id="tab-faq">Ask the shop</button>
+    </nav>
+  </header>
+  <main>
+    <section id="quiz" class="panel on">
+      <h1>Find your cut.</h1>
+      <p class="lede">Four questions. One recommendation. Then book it on Booksy.</p>
+      <div class="progress"><i id="bar"></i></div>
+      <div id="step"></div>
+    </section>
+    <section id="faq" class="panel">
+      <h1>Ask the shop.</h1>
+      <p class="lede">Answers only from Sharp Studios facts. If it does not know, it says so.</p>
+      <div class="chat">
+        <div class="log" id="log"></div>
+        <div class="chips" id="chips"></div>
+        <form class="ask" id="form">
+          <input id="q" autocomplete="off" placeholder="Hours, prices, parking…" />
+          <button type="submit">Ask</button>
+        </form>
+        <p class="note">Closed Sunday and Tuesday. Book on Booksy — no calls or texts.</p>
+      </div>
+      <div id="list" style="margin-top:22px"></div>
+    </section>
+  </main>
+  <script>
+    const BOOK = "https://booksy.com/en-us/43280_sharp-studios-barbershop_barber-shop_33164_reading";
+    const QUESTIONS = [
+      { q:"What are you walking in for?", options:[
+        {id:"fresh",label:"A tight fade",sub:"Skin or low, clean blend"},
+        {id:"keep",label:"Keep my shape",sub:"Taper, lineup, stay neat"},
+        {id:"classic",label:"A classic cut",sub:"Scissors, professional"},
+        {id:"kid",label:"A kid's cut",sub:"Son or first chair"}
+      ]},
+      { q:"Beard or just the hair?", options:[
+        {id:"both",label:"Hair and beard",sub:"Shape both in one sit"},
+        {id:"hair",label:"Hair only",sub:"No beard work"},
+        {id:"touch",label:"Quick shape-up",sub:"Lineup, 15 minutes"}
+      ]},
+      { q:"How often do you want to come back?", options:[
+        {id:"soon",label:"Every 2-3 weeks",sub:"Fade has to stay sharp"},
+        {id:"month",label:"Every 4-6 weeks",sub:"Lower maintenance"}
+      ]},
+      { q:"Do you want extra time in the chair?", options:[
+        {id:"yes",label:"Yes — slow it down",sub:"Premium, about an hour"},
+        {id:"no",label:"No — in and out",sub:"Regular ticket"}
+      ]}
+    ];
+    const picks = [];
+    let n = 0;
+    function recommend() {
+      const [goal,beard,freq,extra] = picks;
+      if (goal==="kid") return {title:"Kids haircut",body:"Book the kids ticket so that chair has time. About 30 minutes, from $32.",service:"Kids Haircut"};
+      if (beard==="touch") return {title:"Shape-up",body:"Lineup only. About 15 minutes, around $22.",service:"Shape Up"};
+      if (extra==="yes") return {title:"Premium",body:"Full sit-down: cut, beard as needed, extra time. About an hour, around $52.",service:"Premium"};
+      if (beard==="both") return {title:"Men's haircut with beard",body:"The usual Sharp Studios ticket. About 40 minutes, from $42.",service:"Men's Haircut w/ Beard"};
+      if (goal==="fresh"||freq==="soon") return {title:"Men's regular haircut",body:"Fade or taper, no beard. About 30 minutes, from $37.",service:"Men's Haircut (Regular)"};
+      return {title:"Men's regular haircut",body:"Classic or scissor work, no beard. About 30 minutes, from $37.",service:"Men's Haircut (Regular)"};
+    }
+    function renderQuiz() {
+      const root = document.getElementById("step");
+      document.getElementById("bar").style.width = (n/QUESTIONS.length*100)+"%";
+      if (n>=QUESTIONS.length) {
+        const r = recommend();
+        root.innerHTML = '<div class="result"><h2>'+r.title+'</h2><p>'+r.body+'</p><div class="row"><a class="btn gold" href="'+BOOK+'" target="_blank" rel="noopener">Book '+r.service+'</a><button type="button" class="btn" id="again">Start over</button></div></div>';
+        document.getElementById("again").onclick = function(){ picks.length=0; n=0; renderQuiz(); };
+        return;
+      }
+      const step = QUESTIONS[n];
+      root.innerHTML = '<p class="q">'+step.q+'</p><div class="choices" id="choices"></div>';
+      step.options.forEach(function(opt){
+        const b=document.createElement("button");
+        b.type="button";
+        b.innerHTML=opt.label+"<small>"+opt.sub+"</small>";
+        b.onclick=function(){ picks[n]=opt.id; n+=1; renderQuiz(); };
+        document.getElementById("choices").appendChild(b);
+      });
+    }
+    const KB = [
+      {q:"Where is Sharp Studios?",a:"157 North 5th Street, Reading, PA 19601. Downtown. Dark studio, gold neon.",keys:["where","address","location","5th","fifth","reading"]},
+      {q:"Where do I park?",a:"Street parking on North 5th and the side streets. Give yourself extra minutes on weekend afternoons.",keys:["park","parking","car"]},
+      {q:"Who cuts hair here?",a:"Wilson Heredia is the lead barber. Family shop. Book the barber you want on Booksy.",keys:["who","wilson","heredia","barber"]},
+      {q:"How do I book?",a:"Online only on Booksy. No calls or texts for bookings. Pick the service, the barber, and the time.",keys:["book","booking","appointment","booksy","call","text"]},
+      {q:"Do you take walk-ins?",a:"Appointments come first. Walk-ins only if a chair opens. Fridays and Saturdays fill fast.",keys:["walk","walk-in","walkin","drop"]},
+      {q:"What are your hours?",a:"Closed Sunday and Tuesday. Other days follow the Booksy calendar. If a slot is open on Booksy, that chair is open.",keys:["hour","hours","open","close","sunday","tuesday"]},
+      {q:"What do you charge?",a:"Premium ~$52 / 1 hr. Cut + beard from $42 / 40 min. Regular cut from $37 / 30 min. Kids from $32 / 30 min. Shape-up ~$22 / 15 min. Beard trim ~$17 / 15 min. Brows ~$12 / 10 min.",keys:["price","prices","cost","charge","how much","menu"]},
+      {q:"What is Premium?",a:"Full sit-down: haircut, beard as needed, extra time. About an hour.",keys:["premium","deluxe"]},
+      {q:"Do you cut kids?",a:"Yes. Book the kids haircut so the chair has time. About 30 minutes, from $32.",keys:["kid","kids","child","son"]},
+      {q:"Do you do fades?",a:"Yes. Skin fades, tapers, classic scissor work, lineups, beard shaping. Bring a photo if you have a specific look.",keys:["fade","taper","skin","lineup"]},
+      {q:"What if I am late?",a:"Arrive 5-10 minutes early. Message through Booksy if you are running late. After 10-15 minutes we may shorten the service or rebook.",keys:["late","cancel","reschedule","no show","no-show"]},
+      {q:"How do I pay?",a:"Card and Booksy Pay. Some Booksy services discount if you pay when you book. Ask in the chair about cash.",keys:["pay","payment","card","cash"]},
+      {q:"Do you speak Spanish?",a:"Yes. English, Espanol, and Portuguese.",keys:["spanish","espanol","portuguese"]}
+    ];
+    function addBubble(role,html){ const d=document.createElement("div"); d.className="bubble "+role; d.innerHTML=html; const log=document.getElementById("log"); log.appendChild(d); log.scrollTop=log.scrollHeight; }
+    function score(text,item){ const t=text.toLowerCase(); let s=0; item.keys.forEach(function(k){ if(t.indexOf(k)!==-1) s+=k.length>4?2:1; }); return s; }
+    function answer(text){
+      addBubble("you",text);
+      const ranked=KB.map(function(item){return {item:item,s:score(text,item)};}).sort(function(a,b){return b.s-a.s;});
+      if(!ranked[0]||ranked[0].s===0){ addBubble("bot","I only know Sharp Studios facts. Try hours, prices, booking, parking, kids, or Premium."); return; }
+      addBubble("bot","<strong>"+ranked[0].item.q+"</strong><br>"+ranked[0].item.a);
+    }
+    function show(tab){
+      document.getElementById("quiz").classList.toggle("on",tab==="quiz");
+      document.getElementById("faq").classList.toggle("on",tab==="faq");
+      document.getElementById("tab-quiz").classList.toggle("on",tab==="quiz");
+      document.getElementById("tab-faq").classList.toggle("on",tab==="faq");
+      location.hash=tab;
+    }
+    document.getElementById("tab-quiz").onclick=function(){show("quiz");};
+    document.getElementById("tab-faq").onclick=function(){show("faq");};
+    ["Hours","Prices","Walk-ins","Parking","Kids","Premium"].forEach(function(c){ const b=document.createElement("button"); b.type="button"; b.textContent=c; b.onclick=function(){answer(c);}; document.getElementById("chips").appendChild(b); });
+    KB.forEach(function(item){ const d=document.createElement("details"); d.innerHTML="<summary>"+item.q+"</summary><p>"+item.a+"</p>"; document.getElementById("list").appendChild(d); });
+    document.getElementById("form").addEventListener("submit",function(e){ e.preventDefault(); const v=document.getElementById("q").value.trim(); if(!v) return; document.getElementById("q").value=""; answer(v); });
+    addBubble("bot","Ask hours, prices, parking, kids, or Premium. I will not invent an answer.");
+    renderQuiz();
+    if(location.hash==="#faq") show("faq");
+  </script>
+</body>
+</html>
